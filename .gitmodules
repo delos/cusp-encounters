@@ -1,0 +1,3 @@
+[submodule "adiabatic-tides"]
+	path = adiabatic-tides
+	url = git@github.com:jstuecker/adiabatic-tides.git
