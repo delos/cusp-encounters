@@ -80,13 +80,13 @@ def cumulative_knn_distribution(r, ndens, k=1):
     
     return 1. - np.exp(-lam) * np.sum(lam[...,np.newaxis]**pows / factorial(pows), axis=-1)
 
-def sample_strongest_B_analytic(chi, G, nsamp=None):
+def sample_strongest_B_analytic(Bstar, nsamp=None):
     if nsamp is None:
-        nsamp = chi.shape
+        nsamp = Bstar.shape
     
     Fsamp = np.random.uniform(0., 1., nsamp)
     
-    return -(2.*np.pi*chi*G) / np.log(1. - Fsamp)
+    return -Bstar / np.log(1. - Fsamp)
 
 def sample_encounters_B(realizations, Bmin, Bstar=1., sort=True):
     """This is the new, good function!"""
