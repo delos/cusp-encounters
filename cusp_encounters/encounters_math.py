@@ -195,3 +195,36 @@ def calculate_density_profile(r, m=None, rmin=1e-2, rmax=1e3, nbins=50):
     ni, _ = np.histogram(r, bins=rbins, weights=m)
     ri = np.sqrt(rbins[1:]*rbins[:-1])
     return ri, ni/vbins
+
+def plot_contour_hist(x,y, bins, ax=None, logx=False, logy=False, density=False, weights=None, cmap="viridis_r", labels=False, perc=(0.1,0.25,0.5,0.75,0.9), linestyles="solid", **kwargs):
+    import matplotlib.pyplot as plt
+    if ax is None:
+        ax = plt.gca()
+    
+    h,bx,by = np.histogram2d(x, y, bins=bins, density=density, weights=weights)
+    def av(x, log=False):
+        if log:
+            return np.sqrt(x[1:]*x[:-1])
+        else:
+            return 0.5*(x[1:]+x[:-1])
+    
+    bxc, byc = av(bx, log=logx), av(by, log=logy)
+    
+    hsort = np.sort(h.flat)[::-1]
+    frac = np.cumsum(hsort) / np.sum(hsort)
+    idxlv = np.argmax(frac[:,np.newaxis] > np.array(perc), axis=0)
+    levels = np.sort(hsort[idxlv])
+    
+    if logx:
+        ax.set_xscale("log")
+    if logy:
+        ax.set_yscale("log")
+    
+    colors = plt.get_cmap(cmap)(perc)
+    CS = ax.contour(bxc, byc, h.T, levels=levels, vmin=hsort[-1], vmax=hsort[0], linewidths=2, colors=colors, linestyles=linestyles, **kwargs)
+    
+    if labels:
+        for p in perc:
+            plt.plot([], linestyle=linestyles, label="%d%%" % np.round((1.-p)*100.), color=plt.get_cmap(cmap)(p))
+            
+    ax.grid("on")
