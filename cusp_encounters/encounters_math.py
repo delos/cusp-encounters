@@ -167,7 +167,7 @@ def angle_histogram(ri, mi, d=8, nalpha=100):
         else:
             weights[ri > d] = mi[ri > d] * anglefac(ri[ri > d], r0)
         
-        mtot[i] = np.mean(weights)
+        mtot[i] = np.sum(weights)
     
     return alpha, mtot
 

@@ -53,7 +53,7 @@ class CuspDistribution():
 
         return cached_sample_peaks(N, k=self.k, Dk=self.Dk_cdm, numin=numin, seed=seed)
     
-    def sample_cusps(self, N = 100000, seed=None, numin=0., units_pc=True):
+    def sample_cusps(self, N = 100000, seed=None, numin=0., units_pc=True, onlyvalid=True):
         nu,x,e,p = self.sample_peaks(N, seed=seed, numin=numin)
         
         G = 43.0071057317063e-10  #  Grav. constant in Mpc (km/s)^2 / Msol
@@ -94,6 +94,23 @@ class CuspDistribution():
             res = dict(A=A/1e9, R=R*1e6, rcusp=rcusp*1e6, Mcusp=Mcusp, acoll=acoll, valid=valid, J=J/1e18, rcore=rcore*1e6)
         else:
             res = dict(A=A, R=R, rcusp=rcusp, Mcusp=Mcusp, acoll=acoll, valid=valid, J=J, rcore=rcore)
+            
+        H0 = 100.*self.cosmology["hubble"]
+        Gmpc = 43.0071057317063 * 1e-10
+        rho0 = 3.*H0**2 / (8.*np.pi*Gmpc) * (self.cosmology["omega_cdm"])
+        
+        if numin == 0.:
+            mdm = rho0 * (N / self.ps.ntot_positive)
+        else:
+            print("Warning, didn't think about numin != 0 for global statistics")
+            mdm = np.nan
+
+        if onlyvalid:
+            for key in res:
+                res[key] = res[key][valid]
+
+        res["mdm_tot"] = mdm # total Lag. dark matter volume = mass represented by the cusps
+        res["mdm_per_cusp"] = res["mdm_tot"] / len(res["Mcusp"])
 
         return res
 
