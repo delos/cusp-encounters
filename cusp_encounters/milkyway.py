@@ -184,6 +184,18 @@ class MilkyWay():
         if "g" in components:
             mass += self.enclosed_mass_disk(r, mode="gasdisk")
         return mass
+    
+    def enclosed_mass_derivative(self, r, components="hbsg", deriv=1, eps=1e-3):
+        def M(r):
+            return self.enclosed_mass(r, components=components)
+        
+        dx = r*eps
+        return (M(r+0.5*dx) - M(r-0.5*dx)) / dx
+    
+    def radial_mean_tide(self, r, components="hbsg"):
+        M, dMdr = self.enclosed_mass(r, components=components), self.enclosed_mass_derivative(r, components=components)
+        
+        return self.G * (2.*M/r**3 - dMdr/r**2)
 
     def potential(self, x, components="hbsg"):
         potential = 0.
