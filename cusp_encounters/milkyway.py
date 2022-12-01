@@ -404,7 +404,8 @@ class MilkyWay():
 
         return res
     
-    def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=None, components="hbsg", seed=42, addinfo=False, subsamp=None, adaptive=False, verbose=False):
+    def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=None, components="hbsg", seed=42, addinfo=False, subsamp=1, adaptive=False, verbose=False, mpicomm=None):
+        """Can use mpi parallelization if passing an mpicommunicator as mpicomm"""
         if rmax is None:
             rmax = self.profile_nfw.r200c*1e6
         
@@ -413,11 +414,13 @@ class MilkyWay():
         else:
             import h5py
             h5cache = "%s/milkyway_orbits.hdf5" % self.cachedir
-            h5path = "/orbit_rmax%.4e_ntot%d_seed%d_components%s_nsteps%d_tmax%.4e_xinfo%d" % (rmax/1e6, ntot, seed, components, nsteps, tmax, addinfo)
-            if subsamp is not None:
-                h5path = "/orbit_rmax%.4e_ntot%d_seed%d_components%s_nsteps%d_tmax%.4e_xinfo%d_sub%d" % (rmax/1e6, ntot, seed, components, nsteps, tmax, addinfo, subsamp)
+            #h5path = "/orbit_rmax%.4e_ntot%d_seed%d_components%s_nsteps%d_tmax%.4e_xinfo%d" % (rmax/1e6, ntot, seed, components, nsteps, tmax, addinfo)
+            #if subsamp is not None:
+            h5path = "/orbit_rmax%.4e_ntot%d_seed%d_components%s_nsteps%d_tmax%.4e_xinfo%d_sub%d" % (rmax/1e6, ntot, seed, components, nsteps, tmax, addinfo, subsamp)
             if adaptive:
                 h5path += "_adaptive"
+            if self.mode == "cautun_2020":
+                h5path += "_cautun"
         
             if os.path.exists(h5cache):
                 with h5py.File(h5cache, "r") as h5file:
@@ -439,6 +442,12 @@ class MilkyWay():
         else:
             res_of_r = None
             
+        if mpicomm is not None:
+            ntotall = ntot
+            ntot = ntot // mpicomm.Get_size()
+            
+            print("ntot per task: %d" % ntot)
+            
         if self.mode == "phatelvis":
             pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r)
         else:
@@ -446,6 +455,21 @@ class MilkyWay():
         
         res = self.integrate_orbit_with_info(pos*1e6, vel, ti, components=components, with_info=addinfo, subsamp=subsamp, verbose=verbose)
         res["mass"] = mass
+        
+        if mpicomm is not None:
+            resnew = gather_array_dict(res, mpicomm, root=0)
+            if mpicomm.Get_rank() != 0:
+                print("Task %d return " % mpicomm.Get_rank())
+                return  None
+            
+            for key in res.keys():
+                print(key, resnew[key].shape)
+                if key != "mass":
+                    shape = resnew[key].shape
+                    res[key] = np.rollaxis(resnew[key], 0, 1).reshape((shape[1], -1)+shape[3:]) # have to stack in the particle number dimension
+            res["mass"] = resnew["mass"].flatten() * (ntot * 1. / ntotall)
+            print("mfac:", (ntot * 1. / ntotall))
+        
         #xi, vi = self.integrate_orbit(pos*1e6, vel, ti, components=components)
         #res = dict(t=ti, pos=xi, vel=vi, mass=mass)
         
@@ -464,3 +488,14 @@ class MilkyWay():
                 at.h5methods.h5py_write_dict(h5file, res, path=h5path, overwrite=True, verbose=1)
                 
         return res
+
+def gather_array_dict(data, mpicomm, root=0, axis=0):
+    """This is an mpi helper function which gathers a dictionary of numpy arrays to a root process"""
+    data_comm = mpicomm.gather(data, root=root)
+    if mpicomm.Get_rank() == root:
+        data = {}
+        for key in data_comm[0]:
+            data[key] = np.stack([data_comm[i][key] for i in range(0, mpicomm.Get_size())], axis=axis)
+    else:
+        data = None
+    return data
