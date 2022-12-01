@@ -80,16 +80,23 @@ def finite_differences_n(x, f, deriv=1, h=1e-5, **kwargs):
 
     return grad
 
-def gather_array_dict(data, mpicomm, root=0, axis=0):
+def gather_array_dict(datain, comm, root=0, axis=0, niter=1):
     """This is an mpi helper function which gathers a dictionary of numpy arrays to a root process"""
-    data_comm = mpicomm.gather(data, root=root)
-    if mpicomm.Get_rank() == root:
-        data = {}
-        for key in data_comm[0]:
-            data[key] = np.stack([data_comm[i][key] for i in range(0, mpicomm.Get_size())], axis=axis)
+    data = {}
+    for key in datain:
+        data[key] = []
+        for i in range(0, niter):
+            datasend = datain[key][i::niter]
+            if comm.Get_rank() == root:
+                data[key] = data[key] + list(comm.gather(datasend, root=root))
+            else:
+                comm.gather(datasend, root=root)
+        if comm.Get_rank() == root:
+            data[key] = np.stack(data[key], axis=axis)
+    if comm.Get_rank() == root:
+        return data
     else:
-        data = None
-    return data
+        return None
 
 class MilkyWay():
     def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None, mass_halo=1e12, conc_initial=8.71, mode="cautun_2020"):
@@ -422,18 +429,29 @@ class MilkyWay():
             pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r)
         
         res = self.integrate_orbit_with_info(pos*1e6, vel, ti, components=components, with_info=addinfo, subsamp=subsamp, verbose=verbose)
-        res["mass"] = mass
         
         if mpicomm is not None:
-            resnew = gather_array_dict(res, mpicomm, root=0)
+            # make sure we never communicate to much at once
+            # (because mpi is a master at creating integer overflows!)
+            niter = int(np.ceil((ntot*nsteps/subsamp) / 1000000))
+            print("Doing %d communications" % niter)
+            
+            
+            for key in res:
+                res[key] = np.rollaxis(res[key], 1, 0) # put particle dimensions in front, since we can split along it
+            res["mass"] = mass
+            resnew = gather_array_dict(res, mpicomm, root=0, niter=niter)
             if mpicomm.Get_rank() != 0:
                 return  None
             
             for key in res.keys():
                 if key != "mass":
                     shape = resnew[key].shape
-                    res[key] = np.rollaxis(resnew[key], 0, 1).reshape((shape[1], -1)+shape[3:]) # have to stack in the particle number dimension
-            res["mass"] = resnew["mass"].flatten() * (ntot * 1. / ntotall)
+                    print("shape", resnew[key].shape)
+                    res[key] = np.moveaxis(resnew[key].reshape((-1,) + shape[2:]), 0, 1) # put the particle axis back to 1
+            res["mass"] = resnew["mass"].flatten() * (ntot * 1. / ntotall) #
+        else:
+            res["mass"] = mass
 
         if h5cache is not None:
             import h5py
