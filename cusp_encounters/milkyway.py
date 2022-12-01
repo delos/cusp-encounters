@@ -80,10 +80,24 @@ def finite_differences_n(x, f, deriv=1, h=1e-5, **kwargs):
 
     return grad
 
+def gather_array_dict(data, mpicomm, root=0, axis=0):
+    """This is an mpi helper function which gathers a dictionary of numpy arrays to a root process"""
+    data_comm = mpicomm.gather(data, root=root)
+    if mpicomm.Get_rank() == root:
+        data = {}
+        for key in data_comm[0]:
+            data[key] = np.stack([data_comm[i][key] for i in range(0, mpicomm.Get_size())], axis=axis)
+    else:
+        data = None
+    return data
+
 class MilkyWay():
     def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None, mass_halo=1e12, conc_initial=8.71, mode="cautun_2020"):
         """
-        mode can be "cautun_2020" (arXiv:1911.04557) or "phatelvis"
+        Mode changes the way the adiabatic contraction is calculated
+        It can be "cautun_2020" (arXiv:1911.04557) or "sellwood_mcgaugh_2005" (arxiv:0507589).
+        It turned out that cautun works better for getting a halo that is consistent with
+        the DM self-annihilation signal.
         """
 
 
@@ -111,6 +125,9 @@ class MilkyWay():
         
         self.adiabatic_contraction = adiabatic_contraction
         if adiabatic_contraction:
+            # Create a spherically averaged mean baryon profile
+            # Using the MonteCarloProfile is a hack to use the
+            # already implemented potential calculation
             rbins = np.logspace(-6, 1, 1000) * 200e3 
             rcent = np.sqrt(rbins[1:]*rbins[:-1])
             mcent = self.enclosed_mass(rbins[1:], components="sbg") - self.enclosed_mass(rbins[:-1], components="sbg")
@@ -131,13 +148,8 @@ class MilkyWay():
                 
                 self.profile_contracted_nfw = at.profiles.NumericalProfile(0.5*(rbins[1:] + rbins[:-1])/1e6, rho_dm*1e18, potential_profile=self.potential_profile)
                 
+            elif mode == "sellwood_mcgaugh_2005":
                 
-            else:
-                # Create a spherically averaged mean baryon profile
-                # Using the MonteCarloProfile is a hack to use the
-                # already implemented potential calculation
-                
-
                 if self.cachedir is None:
                     h5cache = None
                 else:
@@ -148,35 +160,20 @@ class MilkyWay():
                                          niter=20,
                                          verbose=True,
                                          h5cache = h5cache)
+            else:
+                raise ValueError("Unknown mode for the adiabatic contraction: %s" % mode)
             self.profile_halo = self.profile_contracted_nfw
         else:
             self.profile_halo = self.profile_nfw
         
     def potential_halo(self, x):
-        #m200c, c = self.par["halo"]["mass"], self.par["halo"]["conc"]
-            
-        #r200c = RvirOfMvir(m200c, h=self.h, a=1.)
-        #rs = r200c / c
-        
-        #rhoc = m200c/(4.*np.pi*rs**3 * (np.log(1.+c) - c/(1.+c)))
-        #phi0 = - 4.*np.pi*self.G*rhoc*rs**2
-        
-        #u = np.linalg.norm(x, axis=-1) / rs
-        #phi0 * np.log(1. + u) / u, 
-        
-        #r = np.linalg.norm(x, axis=-1)
-
         return self.profile_halo.self_potential(np.linalg.norm(x, axis=-1)/1e6)
     
     def potential_bulge(self, x):
         M, a = self.par["bulge"]["mass"], self.par["bulge"]["scalelength"]
 
-        #self.mode == "cautun_2020": # Use a McMillan (2017) profile
-        #    r = np.linalg.norm(x, axis=-1)
-        #    return - self.G * M / (r + a)
-        #else: # Use a Hernquist model
-        #    r = np.linalg.norm(x, axis=-1)
         r = np.linalg.norm(x, axis=-1)
+        
         return - self.G * M / (r + a)
     
     def potential_disk(self, x,  mode="stardisk"):
@@ -198,15 +195,12 @@ class MilkyWay():
         assert mode in ("stardisk", "gasdisk")
         
         M, Rd, b = self.par[mode]["mass"], self.par[mode]["scalelength"], self.par[mode]["thickness"]
-        
-        #r = np.linalg.norm(x, axis=-1)
 
         return M * (1. - (r + Rd) / Rd * np.exp(- r / Rd) )
     
     def enclosed_mass_bulge(self, r):
         M, a = self.par["bulge"]["mass"], self.par["bulge"]["scalelength"]
-        #r = np.linalg.norm(x, axis=-1)
-        
+
         return M * r**2 / (r + a)**2
     
     def enclosed_mass_halo(self, r):
@@ -378,32 +372,6 @@ class MilkyWay():
 
         return res
     
-    def orbit_info(self, orbits):
-        res = {}
-
-        sdens = self.density(orbits["pos"], components="bs")
-
-        vel_pc_year = orbits["vel"] * 1.022012156719175e-06 # pc/year / (km/s)
-        df = sdens*np.linalg.norm(vel_pc_year, axis=-1)
-        
-        ti = orbits["t"]
-
-        scum = np.cumsum(0.5*(df[1:] + df[:-1])*(ti[1:,np.newaxis] - ti[:-1,np.newaxis]), axis=0)
-        res["sdens"] = sdens
-        res["scolumndens"] = np.insert(scum, 0, 0, axis=0)
-        del scum
-        
-        chi_cum = np.cumsum(0.5*(sdens[1:] + sdens[:-1])*(ti[1:,np.newaxis] - ti[:-1,np.newaxis]), axis=0)
-        res["chi"] = np.insert(chi_cum, 0, 0, axis=0) * 1.022012156719175e-06 # units of this are Msol / pc^3 * (pc/km) * s
-        del chi_cum
-
-        ri = np.linalg.norm(orbits["pos"], axis=-1)
-        nperi = np.sum((ri[1:-1] < ri[2:]) & (ri[1:-1] < ri[:-2]), axis=0)
-
-        res["nperi"] = np.sum((ri[1:-1] < ri[2:]) & (ri[1:-1] < ri[:-2]), axis=0)
-
-        return res
-    
     def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=None, components="hbsg", seed=42, addinfo=False, subsamp=1, adaptive=False, verbose=False, mpicomm=None):
         """Can use mpi parallelization if passing an mpicommunicator as mpicomm"""
         if rmax is None:
@@ -430,7 +398,7 @@ class MilkyWay():
                         res = at.h5methods.h5py_read_dict(h5cache, path=h5path)
 
                         return res
-        print("calculating")
+        print("Integrating orbits...")
         
         # calculation
         np.random.seed(seed)
@@ -448,7 +416,7 @@ class MilkyWay():
             
             print("ntot per task: %d" % ntot)
             
-        if self.mode == "phatelvis":
+        if self.mode == "sellwood_mcgaugh_2005":
             pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r)
         else:
             pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r)
@@ -459,28 +427,14 @@ class MilkyWay():
         if mpicomm is not None:
             resnew = gather_array_dict(res, mpicomm, root=0)
             if mpicomm.Get_rank() != 0:
-                print("Task %d return " % mpicomm.Get_rank())
                 return  None
             
             for key in res.keys():
-                print(key, resnew[key].shape)
                 if key != "mass":
                     shape = resnew[key].shape
                     res[key] = np.rollaxis(resnew[key], 0, 1).reshape((shape[1], -1)+shape[3:]) # have to stack in the particle number dimension
             res["mass"] = resnew["mass"].flatten() * (ntot * 1. / ntotall)
-            print("mfac:", (ntot * 1. / ntotall))
-        
-        #xi, vi = self.integrate_orbit(pos*1e6, vel, ti, components=components)
-        #res = dict(t=ti, pos=xi, vel=vi, mass=mass)
-        
-        #if addinfo:
-        #    res = {**res, **self.orbit_info(res)}
-            
-        #if subsamp is not None:
-        #    for key in res:
-        #        if (not key == "nperi") & (not key == "mass"):
-        #            res[key] = res[key][::subsamp]
-        
+
         if h5cache is not None:
             import h5py
             with h5py.File(h5cache, "a") as h5file:
@@ -488,14 +442,3 @@ class MilkyWay():
                 at.h5methods.h5py_write_dict(h5file, res, path=h5path, overwrite=True, verbose=1)
                 
         return res
-
-def gather_array_dict(data, mpicomm, root=0, axis=0):
-    """This is an mpi helper function which gathers a dictionary of numpy arrays to a root process"""
-    data_comm = mpicomm.gather(data, root=root)
-    if mpicomm.Get_rank() == root:
-        data = {}
-        for key in data_comm[0]:
-            data[key] = np.stack([data_comm[i][key] for i in range(0, mpicomm.Get_size())], axis=axis)
-    else:
-        data = None
-    return data
