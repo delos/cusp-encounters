@@ -81,13 +81,13 @@ def finite_differences_n(x, f, deriv=1, h=1e-5, **kwargs):
     return grad
 
 class MilkyWay():
-    def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None):
+    def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None, mass_halo=1e12, conc_initial=8.71):
         self.h = h
         self.G = G = 43.0071057317063 * 1e-4  #  Grav. constant in pc (km/s)^2 / Msol
         self.cachedir = cachedir
         
         self.par = {}
-        self.par["halo"] = dict(mass = 1e12, conc=8.71)
+        self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
         self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
         self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
         self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)

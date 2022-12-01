@@ -148,8 +148,8 @@ def sample_effective_B_hist(Nsamp, Bstar=1., Bminfac=1e-3, p=1.2, sort=True, ini
     
     return 10.**rv_logBstar_hist.rvs(size=Nsamp) * Bstar
 
-def angle_histogram(ri, mi, d=8, nalpha=100):
-    alpha = np.logspace(-2, np.log10(np.pi), nalpha)
+def angle_histogram(ri, mi, d=8, nalpha=100, logalphamin=-2):
+    alpha = np.logspace(logalphamin, np.log10(np.pi), nalpha)
     mtot = np.zeros_like(alpha)
     
     # Loop to keep memory requirements reasonable
@@ -171,14 +171,14 @@ def angle_histogram(ri, mi, d=8, nalpha=100):
     
     return alpha, mtot
 
-def percentile_plot(ri, perc, ax=None, ylabel=r"y", loc="best", cmap="viridis_r",vi =[0.,0.4,0.8]):
+def percentile_plot(ri, perc, ax=None, ylabel=r"y", loc="best", cmap="viridis_r",vi =[0.,0.4,0.8], labels = [r"99.7% region", r"95% region", r"68% region", "median"]):
     import matplotlib.pyplot as plt
     if ax is None:
         ax = plt.gca()
-    ax.fill_between(ri, perc[:,0], perc[:,-1], label=r"99.7% region", color=plt.get_cmap(cmap)(vi[0]))
-    ax.fill_between(ri, perc[:,1], perc[:,-2], label=r"95% region", color=plt.get_cmap(cmap)(vi[1]))
-    ax.fill_between(ri, perc[:,2], perc[:,-3], label=r"68% region", color=plt.get_cmap(cmap)(vi[2]))
-    ax.loglog(ri, perc[:,3], color="black", label="median")
+    ax.fill_between(ri, perc[:,0], perc[:,-1], label=labels[0], color=plt.get_cmap(cmap)(vi[0]))
+    ax.fill_between(ri, perc[:,1], perc[:,-2], label=labels[1], color=plt.get_cmap(cmap)(vi[1]))
+    ax.fill_between(ri, perc[:,2], perc[:,-3], label=labels[2], color=plt.get_cmap(cmap)(vi[2]))
+    ax.loglog(ri, perc[:,3], color="black", label=labels[3])
     plt.xlim(0.5,2e2)
     ax.set_xlabel(r"$r$ [kpc]", fontsize=14)
     ax.set_ylabel(ylabel, fontsize=14)
