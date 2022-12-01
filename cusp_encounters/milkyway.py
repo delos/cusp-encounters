@@ -81,39 +81,73 @@ def finite_differences_n(x, f, deriv=1, h=1e-5, **kwargs):
     return grad
 
 class MilkyWay():
-    def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None, mass_halo=1e12, conc_initial=8.71):
+    def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None, mass_halo=1e12, conc_initial=8.71, mode="cautun_2020"):
+        """
+        mode can be "cautun_2020" (arXiv:1911.04557) or "phatelvis"
+        """
+
+
+        
         self.h = h
         self.G = G = 43.0071057317063 * 1e-4  #  Grav. constant in pc (km/s)^2 / Msol
         self.cachedir = cachedir
+        self.mode = mode
         
-        self.par = {}
-        self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
-        self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
-        self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
-        self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)
+        if mode == "cautun_2020":
+            self.par = {}
+            #self.par["halo"] = dict(mass = 0.97e12, conc=9.4)
+            self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
+            self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
+            self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
+            self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)
+        else:
+            self.par = {}
+            self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
+            self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
+            self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
+            self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)
         
         self.profile_nfw = at.profiles.NFWProfile(conc=self.par["halo"]["conc"], m200c=self.par["halo"]["mass"])
         
         self.adiabatic_contraction = adiabatic_contraction
         if adiabatic_contraction:
-            # Create a spherically averaged mean baryon profile
-            # Using the MonteCarloProfile is a hack to use the
-            # already implemented potential calculation
             rbins = np.logspace(-6, 1, 1000) * 200e3 
             rcent = np.sqrt(rbins[1:]*rbins[:-1])
             mcent = self.enclosed_mass(rbins[1:], components="sbg") - self.enclosed_mass(rbins[:-1], components="sbg")
             self.profile_baryon_mean = at.profiles.MonteCarloProfile(rcent/1e6, mcent, rbins=rbins/1e6)
             
-            if self.cachedir is None:
-                h5cache = None
+            if mode == "cautun_2020":
+                #arXiv:1911.04557 eqn (11)
+                fbar = 0.1878 # Planck18
+                etabar = self.profile_baryon_mean.m_of_r(rbins/1e6) / (fbar*self.profile_nfw.m_of_r(rbins/1e6))
+                #print(etabar)
+                M_dm = self.profile_nfw.m_of_r(rbins/1e6) * (0.45 + 0.38*(etabar + 1.16)**0.53)
+                rho_dm = (M_dm[1:] - M_dm[:-1]) / (4.*np.pi/3.*(rbins[1:]**3. - rbins[:-1]**3))
+                #print(rho_dm)
+                
+                profile_contracted_nfw = at.profiles.NumericalProfile(0.5*(rbins[1:] + rbins[:-1])/1e6, rho_dm*1e18)
+                
+                self.potential_profile = at.profiles.CompositeProfile(profile_contracted_nfw, self.profile_baryon_mean)
+                
+                self.profile_contracted_nfw = at.profiles.NumericalProfile(0.5*(rbins[1:] + rbins[:-1])/1e6, rho_dm*1e18, potential_profile=self.potential_profile)
+                
+                
             else:
-                h5cache = "%s/contracted_nfw.hdf5" % self.cachedir
-            
-            self.profile_contracted_nfw = at.profiles.AdiabaticProfile(prof_initial=self.profile_nfw, 
-                                     prof_pert=self.profile_baryon_mean, 
-                                     niter=20,
-                                     verbose=True,
-                                     h5cache = h5cache)
+                # Create a spherically averaged mean baryon profile
+                # Using the MonteCarloProfile is a hack to use the
+                # already implemented potential calculation
+                
+
+                if self.cachedir is None:
+                    h5cache = None
+                else:
+                    h5cache = "%s/contracted_nfw.hdf5" % self.cachedir
+
+                self.profile_contracted_nfw = at.profiles.AdiabaticProfile(prof_initial=self.profile_nfw, 
+                                         prof_pert=self.profile_baryon_mean, 
+                                         niter=20,
+                                         verbose=True,
+                                         h5cache = h5cache)
             self.profile_halo = self.profile_contracted_nfw
         else:
             self.profile_halo = self.profile_nfw
@@ -137,6 +171,11 @@ class MilkyWay():
     def potential_bulge(self, x):
         M, a = self.par["bulge"]["mass"], self.par["bulge"]["scalelength"]
 
+        #self.mode == "cautun_2020": # Use a McMillan (2017) profile
+        #    r = np.linalg.norm(x, axis=-1)
+        #    return - self.G * M / (r + a)
+        #else: # Use a Hernquist model
+        #    r = np.linalg.norm(x, axis=-1)
         r = np.linalg.norm(x, axis=-1)
         return - self.G * M / (r + a)
     
@@ -399,7 +438,11 @@ class MilkyWay():
                 return 1./r
         else:
             res_of_r = None
-        pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r)
+            
+        if self.mode == "phatelvis":
+            pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r)
+        else:
+            pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r)
         
         res = self.integrate_orbit_with_info(pos*1e6, vel, ti, components=components, with_info=addinfo, subsamp=subsamp, verbose=verbose)
         res["mass"] = mass
