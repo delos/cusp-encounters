@@ -53,6 +53,8 @@ After reading the paper, I recommend going through the notebooks above, roughly 
 * scipy
 * matplotlib
 * classy
+* mpi4py
+* h5py
 
 ## Acknowledgement:
 If you use this code, please cite the paper as [Stücker et al. (2022) !!!](https://arxiv.org/abs/2207.00604). Additionally there are other works used inside of this repository. Therefore, you should cite these as well if you use the corresponding parts of the code:
