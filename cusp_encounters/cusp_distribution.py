@@ -4,15 +4,24 @@ from . import decorators
 from . import peak_statistics
 
 # Planck 18 cosmology
-#cosm = {'omega_cdm': 0.26067,'omega_de': 0.69889, 'omega_baryon': 0.04897,'hubble': 0.6766,'ns': 0.9665,'sigma8': 0.8102,'tau': 0.0561,'A_s': None,'neutrino_mass': 0.06,'w0': -1,'wa': 0}
 cosm_planck_18 = {'omega_cdm': 0.26067, 'omega_baryon': 0.04897, 'hubble': 0.6766, 'ns': 0.9665, 'tau': 0.0561, 'A_s': 2.105e-09, 'neutrino_mass': 0.0}
 
+# A few examples of how to define different WIMP models.
+# However, I have not really tested other cases than Delos & White (2022)
+# The main challenge is to correctly estimate the free streaming scale and the phase space density constraint.
+# I am using some approximations, by rescaling results, but in principle these may have some complicated dependence
+# on the thermal history of the universe.
 wimp_100gev_delos_white_2022 = {"type":"wimp_bertschinger", "kfs":1.06e6, "m_gev":100., "tkd_mev":30., "ad":5.332e-12}
 wimp_rescaled_1tev = {"type":"wimp_bertschinger_rescaled", "m_gev":1000., "tkd_mev":30., "ad":5.332e-12}
 wimp_rescaled_10tev = {"type":"wimp_bertschinger_rescaled", "m_gev":10000., "tkd_mev":30., "ad":5.332e-12}
 
+# The free streaming length scales in Green, Hofmann & Schwartz (2005) are slightly different to the Bertschinger ones
+# I use the Bertschinger one above, to be consistent with Delos & White (2022). However, I have no cluse which one
+# is actually correct.
 wimp_green_hofmann_schwarz = {"type":"wimp_ghs", "m_gev":100., "tkd_mev":30., "ad":5.332e-12}
-wdm_bode = {"type":"wdm"}
+
+# In principle, we could also treat WDM here, but so far I have only implemented this partially.
+#wdm_bode = {"type":"wdm"}
 
 def wimp_transfer_bertschinger(k, kfs):
     return np.exp(-0.5*(k/kfs)**2)
@@ -27,20 +36,25 @@ def transfer_green_hofmann_schwarz(k, m=100., Tkd=30.): # m in GeV Tkd in MeV
 
 class CuspDistribution():
     def __init__(self, cachedir=None, zref=30.6, kmatch=5e3, cosmology=cosm_planck_18, dm_model=wimp_100gev_delos_white_2022):
-        """
-        Tkd : kinetic decoupling 
+        """This class allows to create a Cusp Distribution.
+        
+        This by sampling peaks of the primordial density field as described in Bardeen et al (1986),
+        (also known as 'BBKS86' (https://ui.adsabs.harvard.edu/abs/1986ApJ...304...15B))
+        and assuming that they collapse into prompt cusps, as explained in arXiv:2209.11237 (Delos & White, 2022)       
+        
+        cachedir : A directory where some results may be cached for speeding up future cllas
+        zref : reference redshift for the power spectrum. Usually you don't need to modify this
+        kmatch : scale where power spectra are matched between CLASS and small scale model. Usually you don't need to modify this
+        cosmology : A dictionary with cosmological parameters. See cusp_distribution.cosm_planck_18 for an example
+        dm_model : A dictionary that describes a dark matter model. This is used to infer the free streaming length, 
+                   the cut-off of the power spectrum and the primordial phase space density constraint. Look at
+                   cusp_distribution.wimp_100gev_delos_white_2022 for an example. Disclaimer: Other cases have not 
+                   been thoroughly tested. However, they should be safe if you directly provide kfs and v0 (see code below).
+                   
+        the main function you will want to use is CuspDistribution.sample_cusps(...)
         """
         
         self.aref = 1./(1.+zref)
-        
-        #ad =5.332e-12
-        #ad = 5.586938741852608e-12
-        #lfs = free_streaming_length(mx_gev=100., td_mev=30., ad=ad, amax=1., h=cosmology["hubble"], 
-        #                            omega_m=(cosmology["omega_cdm"]+cosmology["omega_baryon"]), 
-        #                            omega_l=1-(cosmology["omega_cdm"]+cosmology["omega_baryon"]), 
-        #                            Tcmb=2.7255, geff_ur=3.044)
-        #print("Calculated kfs = %g" % (1./lfs))
-        #print("Not yet using this value")
         
         self.cachedir = cachedir
         self.k = np.logspace(-6, 10, 1000)
@@ -67,7 +81,7 @@ class CuspDistribution():
             self.kfs = self.dm_model["kfs"]
             return wimp_transfer_bertschinger(k, self.kfs)
         elif self.dm_model["type"] == "wimp_bertschinger_rescaled":
-            # In principle the Bertscinger model requires me to integrate the thermal history of the universe
+            # In principle the Bertschinger model requires me to integrate the thermal history of the universe
             # For simplicity I just rescale the known free streaming scale from Delos & White (2022)
             # since the free streaming scale should be proportional to 1/kfs ~ v0
             # However, I think this neglects a small effect that the time free streaming begins (a_d)
@@ -132,6 +146,28 @@ class CuspDistribution():
         return cached_sample_peaks(N, k=self.k, Dk=self.Dk_cdm, numin=numin, seed=seed)
     
     def sample_cusps(self, N = 100000, seed=None, numin=0., units_pc=True, onlyvalid=True):
+        """Samples a distribution of cusps
+        
+        N : number of cusps
+        seed : random number generator seed
+        numin : only consider initial peaks with  delta > numin*sigma. Probably you don't want to change this from 0
+        units_pc : convert all units to parsec. If False will return Mpc units.
+        onlyvalid : If True, will only return valid peaks that have collapsed to cusps by a=1. These may be less than the
+                    initial sampled peaks. If False it will also include invalid peaks and the number will be exactly N
+                    
+        returns a dictionary with several entries. I state units for "units_pc = True"
+        A : density normalization in Msol/pc**-3/2
+        R : Comoving Lagrangian peak radius in pc
+        rcusp : physical outer boundary radius of the cusp in pc
+        Mcusp : mass of the cusp in Msol
+        acoll : collapse scale factor of the cusp
+        valid : whether the cusp is valid (if onlyvalid is True, this should always be True)
+        J : J-factor = integral(rho**2). This assumes a constant density core as in Delos & White (2022)
+               units are Msol**2/pc**3
+        rcore : core radius where the phase space density constraint gets violated (pc)
+        Bcusp : resiliance of the outer boundary to shocks in km/s/pc
+        Bcore : resiliance of the core to shocks in km/s/pc
+        """
         nu,x,e,p = self.sample_peaks(N, seed=seed, numin=numin)
         
         G = 43.0071057317063e-10  #  Grav. constant in Mpc (km/s)^2 / Msol
@@ -218,7 +254,10 @@ def hubble(a, h=0.678, omega_m=0.3, omega_l=0.7, Tcmb=2.7255, geff_ur=3.044):
 
 
 def free_streaming_length(mx_gev=100., td_mev=30., ad=5.332e-12, amax=1., h=0.678, omega_m=0.3, omega_l=0.7, cumulative=False, Tcmb=2.7255, geff_ur=3.044):
-    """https://arxiv.org/pdf/astro-ph/0607319.pdf eqn.48"""
+    """Infer the free-streaming length by integration as in https://arxiv.org/pdf/astro-ph/0607319.pdf eqn.48
+    
+    However, right now this function is not used. Instead we rescale the free streaming length infered by Delos & White(2022)
+    """
     def f(a):
         Hl = hubble(a, omega_m=omega_m, omega_l=omega_l, Tcmb=Tcmb, geff_ur=geff_ur, h=h) / 299792458.0e-3 # Hubble in 1/Mpc
 

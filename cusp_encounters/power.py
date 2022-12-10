@@ -2,6 +2,14 @@ import numpy as np
 import scipy.integrate as it
 import scipy.interpolate as ip
 from scipy.special import gamma
+
+# The main purpose of this module is to get a CDM (dark matter only) power spectrum
+# that includes the effect of baryons not following the dark matter on small scales
+# For this we use (same as Delos & White (2022)) a CLASS power spectrum (http://www.class-code.net/)
+# and the (matched) analytic descriptions from Hu & Suigyama (1996)
+# Basic usage is like this:
+# myclass = power.get_class(z=zref, kmax=2.*kmatch, cosm=cosmology)
+# Dk = power.dimless_cdmpower_all_scales(k, myclass, z=..., A_s=..., ...)
         
 def dimless_power_from_transfer(k, T, ns=0.96, A_s = 2.100549e-09, k_pivot = 0.05):
     pk = T**2 * A_s * (k / k_pivot)**ns *k**-4  
@@ -13,7 +21,7 @@ def hu_sugiyama_deltac(k, a, phi0=1., fnu=0.605, omega_cdm=0.26067, omega_m=0.30
     Hu & Suigyama (1996)
     https://arxiv.org/pdf/astro-ph/9510117.pdf
     
-    fnu : neutrino fracion (?)
+    fnu : neutrino fracion
     """
     
     def alpha(i):
@@ -75,6 +83,9 @@ def class_power_anyspecies(cosmo_class, z=30.6, comp="cdm"):
         assert 0
 
 def dimless_cdmpower_all_scales(k, cosmo_class, z=30.6, kmatch=2e3, ksel=None, A_s=2.100549e-09):
+    """Returns the dimensionless power spectrum of the combination of 
+    CLASS spectrum on resolved scales
+    + Hu & Suigyama (1996) spectrum on unresolved scales"""
     cosmpar = dict(omega_m=cosmo_class.Omega0_m(), omega_cdm=cosmo_class.Omega0_cdm(), hubble=cosmo_class.h(), Tcmb=cosmo_class.T_cmb())
     
     if ksel is None:
@@ -105,6 +116,9 @@ def dimless_cdmpower_all_scales(k, cosmo_class, z=30.6, kmatch=2e3, ksel=None, A
 
 cosm_planck_18 = {'omega_cdm': 0.26067, 'omega_baryon': 0.04897, 'hubble': 0.6766, 'ns': 0.9665, 'tau': 0.0561, 'A_s': 2.105e-09, 'neutrino_mass': 0.0}
 def get_class(z=30.6, kmax=1e4, cosm=cosm_planck_18):
+    """Creates an instace of classy.Class.
+    Requires that classy is installed"""
+    
     import classy
     cosmo_class = classy.Class()
     par = {'output': "mPk,mTk,vTk", 
@@ -121,8 +135,3 @@ def get_class(z=30.6, kmax=1e4, cosm=cosm_planck_18):
     cosmo_class.set(par)
     cosmo_class.compute()
     return cosmo_class
-
-def Twimp(k, Tkd = 30., m=100.):
-    kd  = 3.76e7 * (m/100)**0.5 * (Tkd/30.)**0.5
-    kfs = 1.7e6 * (m/100.)**0.5 * (Tkd/30.)** 0.5 / (1. + np.log( (Tkd/30.) )/19.2)
-    return (1. - 2./3. * (k/kfs)**2) * np.exp(-(k/kfs)**2. - (k/kd)**2.)

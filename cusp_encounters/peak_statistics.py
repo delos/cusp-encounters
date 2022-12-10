@@ -86,6 +86,9 @@ class PeakStatistics():
         
         The main function you will want to use is sample_peaks()
         
+        This code has been inspired by and tested against
+        https://github.com/delos/microhalo-models (Delos et al, 2019)
+        
         k : wavenumbers
         Dk : dimensionless power spectrum at those wavenumbers
         numax : maximal peak height to consider. (20 is more than 
