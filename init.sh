@@ -10,6 +10,9 @@ mkdir -p caches
 # Download the IGRB table
 # If this link does not work: You can find this table as the IGRB table published wit the paper Ackermann et al. (2015)
 wget -O data/igrb_ackermann_2015.txt "https://cfn-live-content-bucket-iop-org.s3.amazonaws.com/journals/0004-637X/799/1/86/revision1/apj504089t3_mrt.txt?AWSAccessKeyId=AKIAYDKQL6LTV7YY2HIK&Expires=1670690788&Signature=%2Fzs%2BfilOfCNJhaaVxBu01EFnzHI%3D"
+# if this does not work, you can download id manually from
+# https://iopscience.iop.org/article/10.1088/0004-637X/799/1/86#apj504089t3
+# scrolling a little bit down and "Download table as: Data"
 
 # download precomputed caches
 # You may skip this, if you want to recompute those yourself

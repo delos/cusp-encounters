@@ -61,7 +61,7 @@ def igrb_integral(Emin_mev=1e3, Emax_mev=1e4):
     except:
         assert (Emin_mev == 1e3) & (Emax_mev == 1e4)
         print("Warning: something went wrong loading the IGRB table, using hard coded results")
-        return 0.0006942623884253771
+        return np.array([6.94262388e-04, 9.01401512e-05, 9.01667939e-05, 3.08368725e-04, 2.81933621e-04, 1.20284736e-03, 1.05113588e-04, 1.05147831e-04, 3.14153601e-04, 3.59118605e-04, 5.04664807e-04, 5.32264490e-05, 5.32264490e-05])
     
     
 def extragalactic_dI_dloge(E_GeV, cusp_dis, cusps):
