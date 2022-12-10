@@ -1,6 +1,7 @@
 # This is a short bash script to help setting up some things
 # Install some python packages:
-pip install numpy scipy matplotlib classy mpi4py h5py
+pip install numpy scipy matplotlib classy h5py
+pip install mpi4py # This may not work in some cases, that is ok!
 
 # Create some directories
 mkdir -p notebooks/img

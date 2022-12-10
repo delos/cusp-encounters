@@ -13,15 +13,20 @@ sys.path.append("../adiabatic-tides")
 sys.path.append("..")
 import cusp_encounters.milkyway
 
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+try:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+except:
+    print("MPI import did not work. I will proceed without mpi4py")
+    comm = None
+    rank = 0
 
 cachedir = "../caches"
 mw = cusp_encounters.milkyway.MilkyWay(adiabatic_contraction=True, cachedir=cachedir, mode="cautun_2020")
 
 t0 = time.time()
-orbits = mw.create_dm_orbits(100000, nsteps=100000, rmax=500e3, addinfo=True, adaptive=True, subsamp=100, mpicomm=comm) # 500
+orbits = mw.create_dm_orbits(100000, nsteps=100000, rmax=500e3, addinfo=True, adaptive=True, subsamp=1000, mpicomm=comm) # 500
 print("Task %d took %.1f seconds" % (rank, time.time() - t0))
 
 if rank == 0:
