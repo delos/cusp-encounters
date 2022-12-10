@@ -2,6 +2,7 @@ import numpy as np
 import sys
 import os
 import scipy.special
+import scipy.stats
 from . import decorators as dc
 
 from scipy.spatial import cKDTree
