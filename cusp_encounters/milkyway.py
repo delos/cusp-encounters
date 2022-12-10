@@ -101,7 +101,13 @@ def gather_array_dict(datain, comm, root=0, axis=0, niter=1):
 class MilkyWay():
     def __init__(self, h=0.679, adiabatic_contraction=True, cachedir=None, mass_halo=1e12, conc_initial=8.71, mode="cautun_2020"):
         """
-        Mode changes the way the adiabatic contraction is calculated
+        A mass and potential model of the Milky Way. It uses several baryonic components plus a contracted dark matter halo
+        
+        cachedir : pass a directory where some cachefiles may be created to speed up future calls
+        
+        The main function you will want to use is MilkyWay.create_dm_orbits(...)
+        
+        the variable "mode" changes the way the adiabatic contraction is calculated
         It can be "cautun_2020" (arXiv:1911.04557) or "sellwood_mcgaugh_2005" (arxiv:0507589).
         It turned out that cautun works better for getting a halo that is consistent with
         the DM self-annihilation signal.
@@ -114,19 +120,11 @@ class MilkyWay():
         self.cachedir = cachedir
         self.mode = mode
         
-        if mode == "cautun_2020":
-            self.par = {}
-            #self.par["halo"] = dict(mass = 0.97e12, conc=9.4)
-            self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
-            self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
-            self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
-            self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)
-        else:
-            self.par = {}
-            self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
-            self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
-            self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
-            self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)
+        self.par = {}
+        self.par["halo"] = dict(mass = mass_halo, conc=conc_initial)
+        self.par["stardisk"] = dict(mass = 4.100e+10, scalelength = 2.500e+03, thickness = 3.500e+02)
+        self.par["gasdisk"]  = dict(mass = 1.9e10, scalelength=7e3, thickness = 8e1)
+        self.par["bulge"]  = dict(mass = 9e9, scalelength=5e2)
         
         self.profile_nfw = at.profiles.NFWProfile(conc=self.par["halo"]["conc"], m200c=self.par["halo"]["mass"])
         
@@ -379,8 +377,33 @@ class MilkyWay():
 
         return res
     
-    def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=None, components="hbsg", seed=42, addinfo=False, subsamp=1, adaptive=False, verbose=False, mpicomm=None):
-        """Can use mpi parallelization if passing an mpicommunicator as mpicomm"""
+    def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=500e3, components="hbsg", seed=42, addinfo=False, subsamp=1, adaptive=False, verbose=False, mpicomm=None):
+        """Creates a set of orbits inside the Milky Way potential.
+        
+        ntot : number of orbits
+        nsteps : number of integration steps. The smaller radii you want to resolve the more steps you need.
+        tmax : end time of the simulation in years
+        rmax : maximal radius to sample towards in parsec
+        components : keep this at "hbsg", unless you only want to consider the gravitational potential of individual components
+        seed : random seed
+        addinfo : If yes, will infer several additional quantities, beyond positions and velocities -- see below. If True, takes quite a bit longer
+        subsamp : return only every subsamp-th step in the result (Using too low subsamp, may produce memory problems!)
+        adaptive : use unequal mass-sampling. This is recommend, but you will have to make sure that you properly mass weight your results!
+        verbose : verbosity
+        mpicomm : if you pass an mpi communicator e.g. mpi4py.MPI.COMM_WORLD, you can use several mpi processes to speed up the calculation.
+        
+        returns a dictionary with the following entries (all units Msol, pc and km/s):
+              mass : masses, shape (ntot,)
+              pos : position, shape (ntot, nout, 3)   where nout = nsteps/subsamp
+              vel : velocity, shape (ntot, nout, 3)
+              acc : acceleration, shape (ntot, nout, 3)
+        if addinfo, additionally we have: (all shapes = (ntot, nout))
+              dens_star : the stellar mass density at each time (Msol/pc**3)
+              dens_dm : the dark matter mass density at each time (Msol/pc**3)
+              chi_star : time-integral over the stellar mass. Unit is Msol/pc**2 / (km/s)
+              chi_dmr : time-integral over the dark matter mass. Unit is Msol/pc**2 / (km/s)
+              scolumndens : the total encountered stellar column density. Unit is Msol/pc**2
+        """
         if rmax is None:
             rmax = self.profile_nfw.r200c*1e6
         
