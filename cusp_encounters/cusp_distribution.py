@@ -163,7 +163,6 @@ class CuspDistribution():
         def rcore_of_cusp(A, fmax):
             """Uses units of Msol and Mpc"""
             return (2.89896590246533e-5 * G**-3 * fmax**-2 / A)**(2./9.)
-        print("Warning, I have to insert the correct WIMP fmax for m!=100mev here")
         fmax = self.fmax()
         rcore = rcore_of_cusp(A, fmax)
 
