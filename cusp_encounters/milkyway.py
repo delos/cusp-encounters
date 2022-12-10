@@ -420,13 +420,14 @@ class MilkyWay():
         if mpicomm is not None:
             ntotall = ntot
             ntot = ntot // mpicomm.Get_size()
+            seed = seed + mpicomm.Get_rank()
             
             print("ntot per task: %d" % ntot)
             
         if self.mode == "sellwood_mcgaugh_2005":
-            pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r)
+            pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r, seed=seed)
         else:
-            pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r)
+            pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r, seed=seed)
         
         res = self.integrate_orbit_with_info(pos*1e6, vel, ti, components=components, with_info=addinfo, subsamp=subsamp, verbose=verbose)
         
