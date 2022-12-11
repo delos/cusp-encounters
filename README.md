@@ -40,7 +40,7 @@ If you forget to add this option when cloning, you can also get the submodules a
 git submodule init
 git submodule update
 ```
-Afterwards you may want to exectue the short shell script 
+Afterwards you should exectue the following short shell script. You may want to check the contents and execute things line by line. If something does not work, some of the comments might help you.
 ```
 ./init.sh
 ```
@@ -49,6 +49,8 @@ which downloads some additional data that may be required in some places. Additi
 After reading the paper, I recommend going through the notebooks above, roughly in the order that they are listed.
 
 ## Requirements:
+* pip
+The following packages can be installed automatically
 * numpy
 * scipy
 * matplotlib
