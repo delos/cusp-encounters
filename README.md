@@ -44,7 +44,7 @@ Afterwards you should exectue the following short shell script. You may want to 
 ```
 ./init.sh
 ```
-which downloads some additional data that may be required in some places. Additionally this will download some precomputed results. (Most things will also work without this step though.)
+This installs some packages and downloads some precomputed results. In principle you can recompute these results by yourself. However, especially the orbit integration will take a while (~ a few ours on multiple CPUs). If you download the precomputed caches most things can be executed within a couple of minutes.
 
 After reading the paper, I recommend going through the notebooks above, roughly in the order that they are listed.
 
@@ -55,8 +55,9 @@ The following packages can be installed automatically
 * scipy
 * matplotlib
 * classy
-* mpi4py
 * h5py
+* gdown (optional)
+* mpi4py (optional)
 
 ## Acknowledgement:
 If you use this code, please cite the paper as [Stücker et al. (2022) !!!](https://arxiv.org/abs/2207.00604). Additionally there are other works used inside of this repository. Therefore, you should cite these as well if you use the corresponding parts of the code:
