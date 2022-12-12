@@ -14,19 +14,20 @@ import scipy.constants as const
 # We have to download the data table of Ackermann et al. (2015)
 # to make everything work out
 
-if not os.path.exists("../data/igrb_ackermann_2015.txt"):
-    print("Please Execute the following command in a shell:")
-    print('wget -O ../data/igrb_ackermann_2015.txt "https://cfn-live-content-bucket-iop-org.s3.amazonaws.com/journals/0004-637X/799/1/86/revision1/apj504089t3_mrt.txt?AWSAccessKeyId=AKIAYDKQL6LTV7YY2HIK&Expires=1670690788&Signature=%2Fzs%2BfilOfCNJhaaVxBu01EFnzHI%3D"')
-    print("if this doesn't work, manually download the data table from the")
-    print("published paper Ackermann et al (2015), arXiv:1410.3696 and")
-    print("place the table under '../data/igrb_ackermann_2015.txt'")
+if not os.path.exists("../data/apj504089t3_mrt.txt"):
+    print("""If you want to use all aspects of gammaray module, you need to download
+             the isotropic gamma ray background table (Ackermann et al, 2015) from
+             https://iopscience.iop.org/article/10.1088/0004-637X/799/1/86#apj504089t3
+             (scrolling a little bit down and "Download table as: Data") and place it 
+             under the name "data/apj504089t3_mrt.txt"
+          """)
 
 data_ackermann = None
 
 def load_ackermann_2015():
     """loads the IGRB table from Ackermann et al (2015)"""
     global data_ackermann, ackermann_2015_loaded, ackermann_2015_error
-    data_ackermann = np.loadtxt("../data/igrb_ackermann_2015.txt", skiprows=61, dtype="str")
+    data_ackermann = np.loadtxt("../data/apj504089t3_mrt.txt", skiprows=61, dtype="str")
     
 def igrb_dI_dloge(E_mev, mode="A"):
     """returns interpolated (and transformed) rows of the IGRB table"""
