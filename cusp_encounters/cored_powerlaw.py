@@ -70,8 +70,7 @@ class PhasespaceTruncatedCusp(at.profiles.MonteCarloProfile):
     def _integrate_profile(self): # Ec=1., 
         def F_rho_of_phi(phi, Ec=1., f0=1.):
              # Note that f0 = fmax*E**(9/2)
-            integral = 16*np.sqrt(2)/(105*Ec**3 + 315*Ec**2*phi + 315*Ec*phi**2 + 105*phi**3)
-            return f0*4.*np.pi*integral
+            return f0*64*np.pi*np.sqrt(2)/(105.*(Ec + phi)**3)
 
         ri = self.rbins
 
