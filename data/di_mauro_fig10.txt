@@ -1,9 +1,13 @@
 # This table represents the surface brightness data of the galactic centre 
-# excess (GCE) from Figure 10 in Di Mauro (2021) arXiv:2101.04694
+# excess (GCE) from Figure 10 in Di Mauro (2021) 
+# Di Mauro M., 2021, Phys. Rev. D, 103, 063029 (arXiv:2101.04694)
+# https://doi.org/10.1103/PhysRevD.103.063029
+#
 # I include this data in the repository (courtesy Di Mauro) so that it is 
 # possible to recreate the Figure where I compare with the GCE. 
 # However, if you intent to use this data for your own purposes, please cite 
 # Di Mauro (2021)
+#
 # Angle  / best-fit SB / error SB / ul SB  [MeV/cm^2/s/sr]
 0.5 0.17095811316887327 0.0031025344620928164 1e-20
 1.5 0.02941558471167156 0.0009896929910689117 1e-20

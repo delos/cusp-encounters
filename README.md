@@ -41,7 +41,7 @@ If you forget to add this option when cloning, you can also get the submodules a
 git submodule init
 git submodule update
 ```
-Afterwards you should exectue the following short shell script. You may want to check the contents and execute things line by line. If something does not work, some of the comments might help you.
+Afterwards you should execute the following short shell script. You may want to check the contents and execute things line by line. If something does not work, some of the comments might help you.
 ```
 ./init.sh
 ```
@@ -65,6 +65,6 @@ If you use this code, please cite the paper as [Stücker et al. (2022) !!!](http
 
 * The [Adiabatic-Tides](https://github.com/jstuecker/adiabatic-tides) repository. This is used for evaluating the effect of smooth tides. [Stücker et al. (2022, b)](https://arxiv.org/abs/2207.00604)
 * Gammaray data of the Galactic Centre Excess under [data/di_mauro_fig10.txt](data/di_mauro_fig10.txt) which was provided by [Di Mauro (2021)](https://arxiv.org/abs/2101.04694)
-* Data of the Isotropic Gamma Ray Background -- these are downloaded dynamically. [Ackermann et al. (2015)](https://arxiv.org/abs/1410.3696)
+* Data of the Isotropic Gamma Ray Background under [data/apj504089t3_mrt.txt](data/apj504089t3_mrt.txt). This file is not available under the MIT license. [Ackermann et al. (2015)](https://arxiv.org/abs/1410.3696)
 * While I have not used directly any code from from the [microhalo-models](https://github.com/delos/microhalo-models) repository from Sten Delos, I have carefully checked my implementation against the results from that code. If you use the code for sampling the distributions of cusps, probably you should cite [Delos et al (2019)](https://arxiv.org/abs/1905.05766) and [Delos & White (2022)](https://arxiv.org/abs/2209.11237), since these presented the corresponding theoretical considerations.
 * To get a power spectrum we also use the CLASS code [Blas et al. (2011)](https://arxiv.org/abs/1104.2933)
