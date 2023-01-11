@@ -303,7 +303,7 @@ class PhasespaceTruncatedCusp(at.profiles.MonteCarloProfile):
         else:
             return rsamp
     
-    def sample_particles(self, ntot=10000, rmax=None, seed=None, niter_e=50, func_rperi_prob=None):
+    def sample_particles(self, ntot=10000, rmax=None, seed=None, niter_e=50):
         """Samples particles consistent with the phasespace distribution
         
         ntot : number of particles to sample
@@ -331,21 +331,6 @@ class PhasespaceTruncatedCusp(at.profiles.MonteCarloProfile):
         vel = at.mathtools.random_direction(ri.shape, 3) * vi[...,np.newaxis]
         
         mass = np.ones_like(ri) * self.m_of_r(rmax) / ntot
-        if func_rperi_prob is not None:
-            rperi = self.rperi((pos, vel))
-            fperi = func_rperi_prob(rperi)
-            
-            keep = np.random.uniform(0., 1., ri.shape) <= fperi
-            
-            #mass = mass / fperi
-            #pos, vel, mass = pos[keep], vel[keep], mass[keep]/fperi[keep]
-
-            
-        
-        
-        mass[np.isnan(mass)] = 0.
-        
-        #np.seterr(**float_err_handling)
         
         return pos,vel,mass
     
