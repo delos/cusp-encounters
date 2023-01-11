@@ -14,6 +14,7 @@ This code can be used to
 * Integrate their orbits in a Milky Way environment
 * Sample the distribution of shocks from stellar encounters
 * Evaluate the effect of such stellar encounters on the annihilation radiation expected from prompt cusps
+* Generate initial conditions for idealized simulations of prompt cusps
 
 ## Content:
 
