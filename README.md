@@ -35,7 +35,7 @@ This code can be used to
 ## Getting Started:
 Please clone the repository with the option "--recurse-submodules". E.g.
 ```
-git clone --recurse-submodules git@github.com:jstuecker/cusp-encounters.git
+git clone --recurse-submodules https://github.com/jstuecker/cusp-encounters.git
 ```
 If you forget to add this option when cloning, you can also get the submodules afterwards with
 ```
