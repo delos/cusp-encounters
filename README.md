@@ -24,7 +24,7 @@ This code can be used to
     - [notebooks/milkyway_orbits.ipynb](notebooks/milkyway_orbits.ipynb): Milky Way model + orbit stability tests + evaluation of parameters needed for the shock histories (~Section 3 of the paper)
     - [notebooks/encounter_distribution.ipynb](notebooks/encounter_distribution.ipynb): The distribution of stellar encounters (~Section 2+3)
     - [notebooks/annihilation_results.ipynb](notebooks/annihilation_results.ipynb): Evaluation of the annihilation luminosities of prompt cusps (after stellar encounters) in the Milky Way. This includes the main results of the paper. (~Section 5 of the paper)
-    - [notebooks/simulation_initial_conditions.ipynb](notebooks/simulation_initial_conditions.ipynb): A short example that shows how to create non-uniform mass ssampling initial conditions for cored profiles and powerlaw profiles. (~Appendix A1)
+    - [notebooks/simulation_initial_conditions.ipynb](notebooks/simulation_initial_conditions.ipynb): A short example that shows how to create initial conditions (with non-uniform mass sampling) for cored profiles and powerlaw profiles. (~Appendix A1)
     - [notebooks/smooth_tides.ipynb](notebooks/smooth_tides.ipynb): Use the [Adiabatic-Tides](https://arxiv.org/abs/2207.00604) model to predict the joint effect of stellar encounters + smooth tides (~Appendix B)
 * [data](data): Contains some data tables
 * [caches](caches): Contains some .hdf5 files to store precalculated results. In principle, you can delete this at the cost of needing to recalculate results
