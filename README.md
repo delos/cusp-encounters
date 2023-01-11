@@ -1,9 +1,9 @@
 # cusp-encounters
-Code for evaluating the effect of stellar encounters on prompt cusps. For details please read the paper [arXiv:2207.00604 !!!](https://arxiv.org/abs/2207.00604). 
+Code for evaluating the effect of stellar encounters on prompt cusps. For details please read [Stücker et al. (2023) (**add link later)](.). 
 
-You can find a explanatory YouTube video [here](https://youtu.be/2tRjzgLpg_Q):
+You can find a explanatory YouTube video [here](https://youtu.be/Y1t2QHmOyEo):
 
-[![Watch the video](data/thumbnail_cusp_2.png)](https://youtu.be/2tRjzgLpg_Q)
+[![Watch the video](data/thumbnail_cusp_2.png)](https://youtu.be/Y1t2QHmOyEo)
 
 Prompt cusps are dark matter haloes which have masses of order earth masses, extents of order 1000 AU (astronomical units) and steep -3/2 powerlaw density profiles. In the central ~2AU there is a finite core with a maximum density due to the primordial velocity dispersion of dark matter. Prompt cusps are expected to be extremely abundant -- e.g. we expect that 10^16 such objects are orbiting inside the Milky Way -- much larger than the number of stars or planets.
 
@@ -61,10 +61,10 @@ The following packages can be installed automatically
 * mpi4py (optional)
 
 ## Acknowledgement:
-If you use this code, please cite the paper as [Stücker et al. (2022) !!!](https://arxiv.org/abs/2207.00604). Additionally there are other works used inside of this repository. Therefore, you should cite these as well if you use the corresponding parts of the code:
+If you use this code, please cite the paper [Stücker et al. (2023) (**add link later)](.). Additionally there are other works used inside of this repository. Therefore, you should cite these as well if you use the corresponding parts of the code:
 
-* The [Adiabatic-Tides](https://github.com/jstuecker/adiabatic-tides) repository. This is used for evaluating the effect of smooth tides. [Stücker et al. (2022, b)](https://arxiv.org/abs/2207.00604)
-* Gammaray data of the Galactic Centre Excess under [data/di_mauro_fig10.txt](data/di_mauro_fig10.txt) which was provided by [Di Mauro (2021)](https://arxiv.org/abs/2101.04694)
-* Data of the Isotropic Gamma Ray Background under [data/apj504089t3_mrt.txt](data/apj504089t3_mrt.txt). This file is not available under the MIT license. [Ackermann et al. (2015)](https://arxiv.org/abs/1410.3696)
+* The [Adiabatic-Tides](https://github.com/jstuecker/adiabatic-tides) repository. This is used for evaluating the effect of smooth tides. [Stücker et al. (2022)](https://arxiv.org/abs/2207.00604)
+* Gammaray data of the Galactic Centre Excess under [data/di_mauro_fig10.txt](data/di_mauro_fig10.txt) which was provided by [Di Mauro (2021)](https://journals.aps.org/prd/abstract/10.1103/PhysRevD.103.063029)
+* Data of the Isotropic Gamma Ray Background under [data/apj504089t3_mrt.txt](data/apj504089t3_mrt.txt). This file is not available under the MIT license. [Ackermann et al. (2015)](https://iopscience.iop.org/article/10.1088/0004-637X/799/1/86)
 * While I have not used directly any code from from the [microhalo-models](https://github.com/delos/microhalo-models) repository from Sten Delos, I have carefully checked my implementation against the results from that code. If you use the code for sampling the distributions of cusps, probably you should cite [Delos et al (2019)](https://arxiv.org/abs/1905.05766) and [Delos & White (2022)](https://arxiv.org/abs/2209.11237), since these presented the corresponding theoretical considerations.
 * To get a power spectrum we also use the CLASS code [Blas et al. (2011)](https://arxiv.org/abs/1104.2933)
