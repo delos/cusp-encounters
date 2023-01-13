@@ -1,5 +1,5 @@
 # cusp-encounters
-Code for evaluating the effect of stellar encounters on prompt cusps. For details please read [Stücker et al. (2023) (**add link later)](.). 
+Code for evaluating the effect of stellar encounters on prompt cusps. For details please read [Stücker et al. (2023)](https://arxiv.org/abs/2301.04670). 
 
 You can find a explanatory YouTube video [here](https://youtu.be/Y1t2QHmOyEo):
 
@@ -62,7 +62,7 @@ The following packages can be installed automatically
 * mpi4py (optional)
 
 ## Acknowledgement:
-If you use this code, please cite the paper [Stücker et al. (2023) (**add link later)](.). Additionally there are other works used inside of this repository. Therefore, you should cite these as well if you use the corresponding parts of the code:
+If you use this code, please cite the paper [Stücker et al. (2023)](https://arxiv.org/abs/2301.04670). Additionally there are other works used inside of this repository. Therefore, you should cite these as well if you use the corresponding parts of the code:
 
 * The [Adiabatic-Tides](https://github.com/jstuecker/adiabatic-tides) repository. This is used for evaluating the effect of smooth tides. [Stücker et al. (2022)](https://arxiv.org/abs/2207.00604)
 * Gammaray data of the Galactic Centre Excess under [data/di_mauro_fig10.txt](data/di_mauro_fig10.txt) which was provided by [Di Mauro (2021)](https://journals.aps.org/prd/abstract/10.1103/PhysRevD.103.063029)
