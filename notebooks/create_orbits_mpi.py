@@ -38,7 +38,7 @@ t0 = time.time()
 print("""Note: In create_orbits_mpi.py we are using subsamp=1000, to reduce storage / memory requirements.
          This still gives very good approximations to the plots in the paper, but if you want to exactly recreate the paper
          results, please change to subsamp=100 and recreate the cache by yourself (See create_orbits_mpi.py)""")
-orbits = mw.create_dm_orbits(100000, nsteps=100000, rmax=500e3, addinfo=True, adaptive=True, subsamp=1000, mpicomm=comm) # subsamp=100
+orbits = mw.create_dm_orbits(100000, nsteps=100000, rmax=500e3, addinfo=True, adaptive=True, subsamp=100, mpicomm=comm) # subsamp=100
 print("Task %d took %.1f seconds" % (rank, time.time() - t0))
 
 #if rank == 0:

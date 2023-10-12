@@ -92,7 +92,7 @@ def gather_array_dict(datain, comm, root=0, axis=0, niter=1):
             else:
                 comm.gather(datasend, root=root)
         if comm.Get_rank() == root:
-            data[key] = np.stack(data[key], axis=axis)
+            data[key] = np.concatenate(data[key], axis=axis)
     if comm.Get_rank() == root:
         return data
     else:
@@ -377,7 +377,7 @@ class MilkyWay():
 
         return res
     
-    def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=500e3, components="hbsg", seed=42, addinfo=False, subsamp=1, adaptive=False, verbose=False, mpicomm=None):
+    def create_dm_orbits(self, ntot=10000, nsteps=10000, tmax=1e10, rmax=500e3, components="hbsg", seed=42, addinfo=False, subsamp=1, adaptive=False, verbose=False, mpicomm=None, rmin=None):
         """Creates a set of orbits inside the Milky Way potential.
         
         ntot : number of orbits
@@ -450,7 +450,7 @@ class MilkyWay():
         if self.mode == "sellwood_mcgaugh_2005":
             pos, vel, mass = self.profile_halo.sample_particles_uniform(ntot, rmax=rmax/1e6, nsteps_chain=1000, res_of_r=res_of_r, seed=seed)
         else:
-            pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r, seed=seed)
+            pos, vel, mass = self.profile_halo.sample_particles(ntot, rmax=rmax/1e6, res_of_r=res_of_r, seed=seed, rmin=rmin/1e6 if rmin is not None else rmin)
         
         res = self.integrate_orbit_with_info(pos*1e6, vel, ti, components=components, with_info=addinfo, subsamp=subsamp, verbose=verbose)
         
@@ -472,8 +472,8 @@ class MilkyWay():
                 if key != "mass":
                     shape = resnew[key].shape
                     print("shape", resnew[key].shape)
-                    res[key] = np.moveaxis(resnew[key].reshape((-1,) + shape[2:]), 0, 1) # put the particle axis back to 1
-            res["mass"] = resnew["mass"].flatten() * (ntot * 1. / ntotall) #
+                    res[key] = np.moveaxis(resnew[key], 0, 1) # put the particle axis back to 1
+            res["mass"] = resnew["mass"] * (ntot * 1. / ntotall) #
         else:
             res["mass"] = mass
 
