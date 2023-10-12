@@ -96,7 +96,7 @@ def dimless_cdmpower_all_scales(k, cosmo_class, z=30.6, kmatch=2e3, ksel=None, A
     
     power = np.zeros_like(k)
     
-    k_class, pk_class = class_power_anyspecies(cosmo_class, comp="cdm")
+    k_class, pk_class = class_power_anyspecies(cosmo_class, comp="cdm", z=z)
     
     power[sel_class] = np.interp(k[sel_class], k_class, pk_class * k_class**3 / (2.*np.pi**2))
     
